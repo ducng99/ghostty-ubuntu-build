@@ -20,7 +20,7 @@ jobs:
     - name: Get latest stable tag
       id: stable-tag
       run: |
-        TAG=$(curl -s "https://api.github.com/repos/ghostty-org/ghostty/tags" | grep -Po  '"name": "\Kv[^"]*')
+        TAG=$(curl -s "https://api.github.com/repos/ghostty-org/ghostty/tags" | grep -Po  '"name": "\Kv[^"]*' | head -1)
         LAST_PROCESSED_TAG=$(curl -s "https://api.github.com/repos/${{ github.repository }}/releases/latest" | grep -Po  '"tag_name": "\Kv[^"]*')
 
         echo "Latest build: $TAG"

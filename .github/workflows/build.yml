@@ -1,0 +1,64 @@
+name: Build
+
+on:
+  schedule:
+    - cron: '0 0 * * 1'
+  workflow_dispatch:
+
+env:
+  CARGO_TERM_COLOR: always
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Get latest stable tag
+      id: stable-tag
+      run: |
+        TAG=$(curl -s "https://api.github.com/repos/ghostty-org/ghostty/tags" | grep -Po  '"name": "\Kv[^"]*')
+        LAST_PROCESSED_TAG=$(curl -s "https://api.github.com/repos/${{ github.repository }}/releases/latest" | grep -Po  '"tag_name": "\Kv[^"]*')
+
+        echo "Latest build: $TAG"
+        echo "Last built: $LAST_PROCESSED_TAG"
+
+        if [ "$TAG" != "$LAST_PROCESSED_TAG" ]; then
+          echo "should_run=true" >> $GITHUB_OUTPUT
+          echo "tag=$TAG" >> $GITHUB_OUTPUT
+          echo "New version found"
+        else
+          echo "should_run=false" > $GITHUB_OUTPUT
+        fi
+
+    - name: Set up zig
+      if: ${{ steps.stable-tag.outputs.should_run == 'true' }}
+      uses: mlugg/setup-zig@v1
+      with:
+        version: 0.13
+
+    - name: Install build deps
+      if: ${{ steps.stable-tag.outputs.should_run == 'true' }}
+      run: sudo apt-get install libgtk-4-dev libadwaita-1-dev
+
+    - uses: actions/checkout@v4
+      if: ${{ steps.stable-tag.outputs.should_run == 'true' }}
+      with:
+        repository: ghostty-org/ghostty
+        ref: ${{ steps.stable-tag.outputs.tag }}
+
+    - name: Build
+      if: ${{ steps.stable-tag.outputs.should_run == 'true' }}
+      run: zig build -Doptimize=ReleaseFast
+
+    - name: Create release
+      if: ${{ steps.stable-tag.outputs.should_run == 'true' }}
+      uses: softprops/action-gh-release@v2
+      with:
+        tag_name: ${{ steps.stable-tag.outputs.tag }}
+        body: https://github.com/ghostty-org/ghostty/releases/tag/${{ steps.stable-tag.outputs.tag }}
+        fail_on_unmatched_files: true
+        files: zig-out/bin/ghostty

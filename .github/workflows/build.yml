@@ -74,6 +74,7 @@ jobs:
     runs-on: ubuntu-latest
 
     needs:
+    - precheck
     - build
 
     permissions:

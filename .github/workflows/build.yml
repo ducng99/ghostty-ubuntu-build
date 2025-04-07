@@ -48,10 +48,10 @@ jobs:
     - name: Set up zig
       uses: mlugg/setup-zig@v1
       with:
-        version: 0.13.0
+        version: 0.14.0
 
     - name: Install build deps
-      run: sudo apt-get update && sudo apt-get install libgtk-4-dev libadwaita-1-dev
+      run: sudo apt-get update && sudo apt-get install libgtk-4-dev libadwaita-1-dev blueprint-compiler gettext
 
     - uses: actions/checkout@v4
       with:
